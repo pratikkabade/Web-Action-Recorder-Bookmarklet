@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bookmarklet Launcher</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #bookmarkletCode {
+            width: 100%;
+            height: 150px;
+            overflow-y: scroll;
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f4f4f4;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Bookmarklet Launcher</h1>
+    <input type="text" id="urlInput" placeholder="Enter URL to open">
+    <button onclick="launchBookmarklet()">Open with Bookmarklet</button>
+
+    <div>
+        <h3>Loaded Bookmarklet:</h3>
+        <pre id="bookmarkletCode"></pre>
+    </div>
+
+    <script>
+        async function loadBookmarklet() {
+            try {
+                const response = await fetch('3.1.min.js');
+                const bookmarkletText = await response.text();
+
+                // Display the bookmarklet code
+                document.getElementById('bookmarkletCode').textContent = bookmarkletText;
+
+                // Store the bookmarklet for later use
+                window.loadedBookmarklet = bookmarkletText;
+            } catch (error) {
+                console.error('Error loading bookmarklet:', error);
+                document.getElementById('bookmarkletCode').textContent = 'Failed to load bookmarklet';
+            }
+        }
+
+        function launchBookmarklet() {
+            // Get the URL from the input
+            const url = document.getElementById('urlInput').value.trim();
+
+            // Validate URL
+            if (!url) {
+                alert('Please enter a valid URL');
+                return;
+            }
+
+            // Validate bookmarklet is loaded
+            if (!window.loadedBookmarklet) {
+                alert('Bookmarklet not loaded. Please check the file.');
+                return;
+            }
+
+            // Open the URL in a new window
+            const newWindow = window.open(url, '_blank');
+
+            // Wait for the new window to load
+            newWindow.onload = function () {
+                try {
+                    // Execute the bookmarklet in the new window's context
+                    newWindow.eval(window.loadedBookmarklet);
+                } catch (error) {
+                    console.error('Error executing bookmarklet:', error);
+                    alert('Failed to run bookmarklet');
+                }
+            };
+        }
+
+        // Load the bookmarklet when the page loads
+        loadBookmarklet();
+    </script>
+</body>
+
+</html>
