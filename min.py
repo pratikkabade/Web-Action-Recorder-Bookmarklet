@@ -8,10 +8,10 @@ def minify_js_file(input_path, output_path):
         outfile.write(minified_js)
     print(f"Minified file saved to {output_path}")
 
-input_file = '3.1.js'
-output_file = '3.1.min.js'
+input_file = 'basic.js'
+output_file = 'basic.min.js'
 minify_js_file(input_file, output_file)
 
-input_file = '4.1.js'
-output_file = '4.1.min.js'
-minify_js_file(input_file, output_file)
+# input_file = '4.1.js'
+# output_file = '4.1.min.js'
+# minify_js_file(input_file, output_file)

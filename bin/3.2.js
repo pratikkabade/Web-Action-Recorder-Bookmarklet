@@ -2,7 +2,6 @@ javascript: (function () {
     var isRecording = false;
     var steps = [];
     var storageKey = 'selenium_steps';
-    var majorStep = 1;
 
     function loadTailwindCSS() {
         if (!document.getElementById('tailwind-cdn')) {
@@ -37,18 +36,6 @@ javascript: (function () {
         }
     }
 
-    function captureScreenshot() {
-        steps.push({ action: 'screenshot' });
-        saveSteps();
-        updateButtonText();
-    }
-
-    function addStep() {
-        steps.push({ action: 'newStep' });
-        saveSteps();
-        updateButtonText();
-    }
-
     function createButton() {
         var oldButton = document.getElementById('seleniumRecorderBtn');
         if (oldButton) oldButton.remove();
@@ -58,24 +45,6 @@ javascript: (function () {
         button.className = 'fixed top-4 right-4 z-[9999999] px-4 py-2 text-white font-medium text-sm rounded-lg cursor-pointer mr-2 mb-2 focus:outline-none ' + (isRecording ? 'bg-red-700 hover:bg-red-800' : 'bg-green-700 hover:bg-green-800');
         button.onclick = toggleRecording;
         document.body.appendChild(button);
-
-        var oldStepButton = document.getElementById('stepBtn');
-        if (oldStepButton) oldStepButton.remove();
-        var stepButton = document.createElement('button');
-        stepButton.id = 'stepBtn';
-        stepButton.innerHTML = 'Add Step';
-        stepButton.className = 'fixed top-[120px] right-4 z-[9999999] py-2.5 px-5 me-2 mb-2 text-sm font-medium text-green-900 focus:outline-none bg-white rounded-lg border border-green-200 hover:bg-green-100 hover:text-green-700 focus:z-10 focus:ring-4 focus:ring-green-100 dark:focus:ring-green-700 dark:bg-green-800 dark:text-green-400 dark:border-green-600 dark:hover:text-white dark:hover:bg-green-700';
-        stepButton.onclick = addStep;
-        if (isRecording) { document.body.appendChild(stepButton); }
-
-        var oldSSButton = document.getElementById('screenshotBtn');
-        if (oldSSButton) oldSSButton.remove();
-        var ssButton = document.createElement('button');
-        ssButton.id = 'screenshotBtn';
-        ssButton.innerHTML = 'Capture Screenshot';
-        ssButton.className = 'fixed top-[60px] right-4 z-[9999999] py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700';
-        ssButton.onclick = captureScreenshot;
-        if (isRecording) { document.body.appendChild(ssButton); }
     }
 
     function updateButtonText() {
@@ -171,7 +140,7 @@ javascript: (function () {
     }
 
     function handleClick(event) {
-        if (event.target.id === 'seleniumRecorderBtn' || event.target.id === 'seleniumRecorderDownload' || event.target.id === 'screenshotBtn' || event.target.id === 'stepBtn' || !isRecording) {
+        if (event.target.id === 'seleniumRecorderBtn' || event.target.id === 'seleniumRecorderDownload' || !isRecording) {
             return;
         }
 
@@ -220,17 +189,6 @@ javascript: (function () {
     function startRecording() {
         isRecording = true;
         steps = [];
-        var screenWidth = window.screen.width;
-        var screenHeight = window.screen.height;
-        var browserWidth = window.innerWidth;
-        var browserHeight = window.innerHeight;
-        steps.push({
-            action: 'setup',
-            screenWidth: screenWidth,
-            screenHeight: screenHeight,
-            browserWidth: browserWidth,
-            browserHeight: browserHeight
-        });
         saveSteps();
         document.addEventListener('click', handleClick, true);
         document.addEventListener('change', handleInput, true);
@@ -244,21 +202,6 @@ javascript: (function () {
             return;
         }
 
-        var screenWidth = 1920;
-        var screenHeight = 1080;
-        var browserWidth = 1366;
-        var browserHeight = 768;
-
-        for (var i = 0; i < steps.length; i++) {
-            if (steps[i].action === 'setup') {
-                screenWidth = steps[i].screenWidth;
-                screenHeight = steps[i].screenHeight;
-                browserWidth = steps[i].browserWidth;
-                browserHeight = steps[i].browserHeight;
-                break;
-            }
-        }
-
         var url = window.location.href;
         var code = [
             '# SCRIPT_NAME: Web Form Automation',
@@ -266,18 +209,17 @@ javascript: (function () {
             '',
             'from selenium import webdriver',
             'from selenium.webdriver.common.by import By',
-            'from Script_Runner import Script_Runner',
+            'from Script_Runner import navigate_to_url, find_and_perform_action, select_dropdown_by_visible_text',
+            'import time',
+            '',
+            '# Initialize the WebDriver',
+            'driver = webdriver.Chrome()',
             '',
             '# --- Test Steps ---',
-            '',
-            'def run_script():',
-            '    script_num=1',
-            '    app = Script_Runner("Dev", script_num, gui=True, width=' + screenWidth + ', height=' + screenHeight + ')',
-            '',
-            '    def step_1():',
+            ''
         ];
 
-        code.push('        ' + 'app.navigate_to_url("' + url + '")');
+        code.push('navigate_to_url(driver, "' + url + '")');
 
         for (var i = 0; i < steps.length; i++) {
             var step = steps[i];
@@ -299,26 +241,18 @@ javascript: (function () {
             var stepNumber = i + 1;
 
             if (step.action === 'click') {
-                code.push(`${'        '}app.find_and_perform_action(${byType}, ${selector}, action="click", step_num=${stepNumber})`);
+                code.push(`find_and_perform_action(driver, ${byType}, ${selector}, action="click", step_num=${stepNumber})`);
             } else if (step.action === 'input') {
                 var value = step.value.replace(/"/g, '\\"');
-                code.push(`${'        '}app.find_and_perform_action(${byType}, ${selector}, action="clear_and_send_keys", value="${value}", step_num=${stepNumber})`);
+                code.push(`find_and_perform_action(driver, ${byType}, ${selector}, action="clear_and_send_keys", value="${value}", step_num=${stepNumber})`);
             } else if (step.action === 'select_by_visible_text') {
                 var value = step.value.replace(/"/g, '\\"');
-                code.push(`${'        '}app.select_dropdown_by_visible_text(${byType}, ${selector}, "${value}", step_num=${stepNumber})`);
-            } else if (step.action === 'screenshot') {
-                code.push(`${'        '}app.save_screenshot()`);
-            } else if (step.action === 'newStep') {
-                majorStep += 1;
-                code.push(`\n${'    '}def step_${majorStep}():`);
+                code.push(`select_dropdown_by_visible_text(driver, ${byType}, ${selector}, "${value}", step_num=${stepNumber})`);
             }
         }
         code.push('');
-        code.push('    ' + 'val = app.run_sripts(step_1, step_2)');
-        code.push('    ' + 'print(val)');
-        code.push('');
-        code.push('if __name__ == "__main__":');
-        code.push('    ' + 'run_script()');
+        code.push('print("Script completed successfully!")');
+        code.push('driver.quit() # Uncomment to close browser when done');
         var pythonCode = code.join('\n');
         copyToClipboard(pythonCode);
         createDownloadLink(pythonCode);
